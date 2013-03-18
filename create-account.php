@@ -2,23 +2,35 @@
 require_once '_util.php';
 require_once 'db/_db.php';
 
-$error_message = "";
+$error_messages = array();
 
 function handlePost() {
-  global $error_message;
+  global $error_messages, $DORMS;
   $email = $_POST['email'];
   $password = $_POST['password'];
   $confirmPassword = $_POST['confirm-password'];
   $dorm = $_POST['dorm'];
 
-  # TODO: finish; check not blank AND valid, then add to DB
+  # TODO: finish; check not valid, then add to DB
 
   // check all required values present
+  if (!$email) array_push($error_messages, "You must provide your email address.");
+  if (!$password) array_push($error_messages, "You must provide a password.");
+  // 0 is a valid dorm value
+  if ($dorm != 0 && !$dorm) array_push($error_messages, "You must provide your dorm.");
+  if (count($error_messages) > 0) return;
 
   // check validity of values
   $existing_account = query("select email from User where email = ?", array($email));
   if (count($existing_account) > 0) {
-    $error_message = "An account with that email address already exists. Please use a different email address.";
+    array_push($error_messages,
+      "An account with that email address already exists. Please use a different email address.");
+  }
+  if ($password != $confirmPassword) {
+    array_push($error_messages, "Your password confirmation does not match. Please type in your password exactly the same.");
+  }
+  if ($dorm < 0 || $dorm >= count($DORMS)) {
+    array_push($error_messages, "Please choose a valid dorm value.");
   }
 }
 
@@ -36,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') handlePost();
     <h3>Create an Account</h3>
 
     <?php
-    if ($error_message) {
+    foreach ($error_messages as $error_message) {
       print '<p class="error">' . $error_message . '</p>';
     }
     ?>
@@ -57,10 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') handlePost();
       <p>
         <label for="dorm">Dorm:</label>
         <select name="dorm">
-          <option value="<?php print $GAVILAN; ?>">Gavilan</option>
-          <option value="<?php print $LORO; ?>">Loro</option>
-          <option value="<?php print $MIRLO; ?>">Mirlo</option>
-          <option value="<?php print $PALOMA; ?>">Paloma</option>
+          <?php for ($i = 0; $i < count($DORMS); $i++) { ?>
+            <option value="<?= $i ?>"><?= $DORMS[$i] ?></option>
+          <?php } ?>
         </select>
       </p>
       <p><input type="submit" value="Create Account" /></p>
