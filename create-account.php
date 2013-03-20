@@ -32,6 +32,17 @@ function handlePost() {
   if ($dorm < 0 || $dorm >= count($DORMS)) {
     array_push($error_messages, "Please choose a valid dorm value.");
   }
+
+  if (count($error_messages) > 0) return;
+
+  // create the account and log in
+  $salt = bin2hex(openssl_random_pseudo_bytes(16));
+  $password_digest = crypt($password, $salt);
+  query("insert into User (email, password_digest, salt, dorm, alive, is_terminator) values (?, ?, ?, ?, ?, ?)",
+    array($email, $password_digest, $salt, $dorm, true, false));
+  $results = query("select id from User where email = ?", array($email));
+  login($results[0]['id']);
+  redirect_to('index.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') handlePost();
